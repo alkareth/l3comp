@@ -1,0 +1,68 @@
+1 reserver 3
+3
+2 empiler 0
+0
+4 affecterg 0
+0
+2 empiler 0
+0
+4 affecterg 1
+1
+20 lirent
+4 affecterg 2
+2
+3 contenug 2 // WHILE
+2
+2 empiler -1
+-1
+13 diff
+18 bsifaux <finwhile>
+62
+3 contenug 2 // IF ...
+2
+2 empiler 0
+0
+11 supeg
+3 contenug 2
+2
+2 empiler 20
+20
+9 infeg
+6 et
+18 bsifaux <sinon> // THEN ...
+57
+3 contenug 2
+2
+2 empiler 10
+10
+8 inf
+18 bsifaux <sinon2>
+50
+3 contenug 0
+0
+2 empiler 1
+1
+14 add
+4 affecterg 0
+0
+19 bincond <finsi2>
+57
+3 contenug 1
+1
+2 empiler 1
+1
+14 add
+4 affecterg 1 // FINSI
+1
+20 lirent
+4 affecterg 2
+2
+19 bincond <while> // FINWHILE
+14
+3 contenug 0
+0
+22 ecrent
+3 contenug 1
+1
+22 ecrent
+24 arret

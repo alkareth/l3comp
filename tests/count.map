@@ -1,0 +1,55 @@
+1 reserver 3
+3
+2 empiler 0
+0
+4 affecterg 1
+1
+2 empiler 0
+0
+4 affecterg 2
+2
+20 lirent
+4 affecterg 0
+0
+3 contenug 0
+0
+2 empiler -1
+-1
+13 diff
+18 bsifaux 49
+49
+3 contenug 0
+0
+2 empiler 12
+12
+12 eg
+18 bsifaux 37
+37
+3 contenug 1
+1
+2 empiler 1
+1
+14 add
+4 affecterg 1
+1
+19 bincond 44
+44
+3 contenug 2
+2
+2 empiler 1
+1
+14 add
+4 affecterg 2
+2
+20 lirent
+4 affecterg 0
+0
+19 bincond 14
+14
+3 contenug 1
+1
+22 ecrent
+3 contenug 2
+2
+22 ecrent
+24 arret
