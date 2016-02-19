@@ -1,6 +1,6 @@
 # Test des expressions arithmétiques et booléennes
 programme bidon :
-	var ent truc;
 debut
-	truc := 2 * 5;
+	ecrire(1+1-4*(7-3));
+	ecrire(vrai et (vrai ou faux));
 fin

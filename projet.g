@@ -36,10 +36,10 @@ partiedef    : 'def' ident  (',' ident )* ptvg;
 partieref    : 'ref'  specif (',' specif)* ptvg;
 specif       : ident ( 'fixe' '(' type ( ',' type  )* ')' )? 
                      ( 'mod'  '(' type ( ',' type  )* ')' )?;
-consts       : 'const' ( ident { PtGen.pt(1); } '=' valeur { PtGen.pt(2); } ptvg )+;
-vars         : 'var' ( type ident { PtGen.pt(1); PtGen.pt(7); }
-                     ( ','  ident { PtGen.pt(1); PtGen.pt(7); } )* ptvg )+ { PtGen.pt(8); };
-type         : 'ent' { PtGen.pt(9); } | 'bool' { PtGen.pt(10); };
+consts       : 'const' ( ident { PtGen.pt(1); } '=' valeur { PtGen.pt(200); PtGen.pt(4); } ptvg )+;
+vars         : 'var' ( type ident { PtGen.pt(1); PtGen.pt(201); }
+                     ( ','  ident { PtGen.pt(1); PtGen.pt(201); } )* ptvg { PtGen.pt(4); })+ { PtGen.pt(202); };
+type         : 'ent' { PtGen.pt(2); } | 'bool' { PtGen.pt(3); };
 
 decprocs : (decproc ptvg)+;
 decproc  : 'proc' ident parfixe? parmod? consts? vars? corps;
@@ -62,35 +62,38 @@ inscond      : 'cond'  expression  ':' instructions
                (','  expression  ':' instructions )* 
                ('aut'  instructions)? 'fcond';
 boucle       : 'ttq'  expression 'faire' instructions 'fait';
-lecture      : 'lire' '(' ident  ( ',' ident  )* ')';
-ecriture     : 'ecrire' '(' expression  ( ',' expression  )* ')';
-affouappel   : ident  ( ':=' expression
+lecture      : 'lire' '(' ident { PtGen.pt(5); PtGen.pt(300); }
+                    ( ',' ident { PtGen.pt(5); PtGen.pt(300); } )* ')';
+ecriture     : 'ecrire' '(' expression { PtGen.pt(301); PtGen.pt(4); }
+                      ( ',' expression { PtGen.pt(301); PtGen.pt(4); } )* ')';
+affouappel   : ident { PtGen.pt(5); PtGen.pt(302); } ( ':=' expression { PtGen.pt(303); PtGen.pt(4); }
                       | (effixes (effmods)?)? );
 effixes      : '(' (expression  (',' expression  )*)? ')';
 effmods      :'(' (ident  (',' ident  )*)? ')'; 
 
-expression : (exp1) ('ou' exp1 )*;
-exp1       : exp2 ('et'  exp2  )*;
-exp2       : 'non' exp2 
+// Il manque des vérifs de type sur les opérateurs
+expression : (exp1) ('ou' exp1 { PtGen.pt(118); } )*;
+exp1       : exp2 ('et' exp2 { PtGen.pt(117); } )*;
+exp2       : 'non' exp2 { PtGen.pt(116); }
            | exp3;
-exp3       : exp4 ( '='   exp4 
-                  | '<>'  exp4 
-                  | '>'   exp4 
-                  | '>='  exp4 
-                  | '<'   exp4 
-                  | '<='  exp4 )?;
-exp4       : exp5 ( '+'   exp5 
-                  | '-'   exp5 )*;
-exp5       : primaire ( '*'    primaire { PtGen.pt(13); }
-                      | 'div'  primaire { PtGen.pt(14); } )*;
-primaire   : valeur { PtGen.pt(11); }
-           | ident { PtGen.pt(1); PtGen.pt(12); PtGen.pt(11); }
+exp3       : exp4 ( '='   exp4 { PtGen.pt(114); }
+                  | '<>'  exp4 { PtGen.pt(115); }
+                  | '>'   exp4 { PtGen.pt(112); }
+                  | '>='  exp4 { PtGen.pt(113); }
+                  | '<'   exp4 { PtGen.pt(110); }
+                  | '<='  exp4 { PtGen.pt(111); } )?;
+exp4       : exp5 ( '+'   exp5 { PtGen.pt(108); }
+                  | '-'   exp5 { PtGen.pt(109); } )*;
+exp5       : primaire ( '*'    primaire { PtGen.pt(106); }
+                      | 'div'  primaire { PtGen.pt(107); } )*;
+primaire   : valeur { PtGen.pt(104); }
+           | ident { PtGen.pt(5); PtGen.pt(105); }
            | '(' expression ')';
-valeur     : nbentier { PtGen.pt(6); }
-           | '+' nbentier { PtGen.pt(6); }
-           | '-' { PtGen.pt(5); } nbentier { PtGen.pt(6); }
-           | 'vrai' { PtGen.pt(10); PtGen.pt(3); }
-           | 'faux' { PtGen.pt(10); PtGen.pt(4); };
+valeur     : nbentier { PtGen.pt(2); PtGen.pt(101); }
+           | '+' nbentier { PtGen.pt(2); PtGen.pt(101); }
+           | '-' { PtGen.pt(100); } nbentier { PtGen.pt(2); PtGen.pt(101); }
+           | 'vrai' { PtGen.pt(3); PtGen.pt(102); }
+           | 'faux' { PtGen.pt(3); PtGen.pt(103); };
 
 // partie lexicale  : cette partie ne doit pas être modifiée  //
 // les unités lexicales de ANTLR doivent commencer par une majuscule

@@ -195,6 +195,7 @@ public static String trinome="Thomas Boucherie, Léo Noël-Baron et Thierry Samp
 
 private static int cptVar; // compteur de variables
 private static int code; // code de l'ident courant
+private static int iSymb;
 private static int tCour; // type de l'expression compilée
 private static int mulFac; // facteur pour les constantes négatives
 private static int vCour; // valeur de l'expression compilée le cas echeant
@@ -209,8 +210,10 @@ private static void initialisations() { // à compléter si nécessaire mais NE 
     it = 0;
     bc = 1;
     ipo = 0;
+
     cptVar = 0;
     code = 0;
+    iSymb = 0;
     tCour = NEUTRE;
     mulFac = 1;
     vCour = 0;
@@ -225,64 +228,91 @@ private static void initialisations() { // à compléter si nécessaire mais NE 
 public static void pt(int numGen) {
     int cat;
     switch (numGen) {
-    case 0:
-        initialisations();
+    
+    case 0: initialisations(); break;
+    
+    case 1: code = UtilLex.numId; break;
+    case 5:
+        iSymb = presentIdent(UtilLex.numId);
+        if (iSymb == 0)
+            UtilLex.messErr("Identifiant non déclaré");
         break;
-    case 1: // récupération du code d'un ident
-        code = UtilLex.numId;
-        break;
-    case 2: // enregistrement d'une constante
-        if (presentIdent(code) != 0)
-            UtilLex.messErr("identifiant déjà réservé");
-        placeIdent(code, CONSTANTE, tCour, vCour);
+    case 2:
+        if (tCour == NEUTRE) tCour = ENT;
+        else if (tCour != ENT) UtilLex.messErr("Erreur de typage, entier inattendu");
         break;
     case 3:
-        vCour = VRAI;
+        if (tCour == NEUTRE) tCour = BOOL;
+        else if (tCour != BOOL) UtilLex.messErr("Erreur de typage, booléen inattendu");
         break;
-    case 4: // valeur constante BOOL
-        vCour = FAUX;
-        break;
-    case 5: // valeur constante ENT
-        mulFac = -1;
-        break;
-    case 6:
-        tCour = ENT;
+    case 4: tCour = NEUTRE; break;
+
+    case 100: mulFac = -1; break;
+    case 101:
         vCour = UtilLex.valNb * mulFac;
+        mulFac = 1;
         break;
-    case 7: // enregistrement d'une variable
+    case 102: vCour = VRAI; break;
+    case 103: vCour = FAUX; break;
+    case 104: produire(EMPILER); produire(vCour); break;
+    case 105:
+        if (tCour == NEUTRE) tCour = tabSymb[iSymb].type;
+        else if (tCour != tabSymb[iSymb].type) UtilLex.messErr("Erreur de typage");
+        if (tabSymb[iSymb].categorie == CONSTANTE)
+            produire(EMPILER);
+        if (tabSymb[iSymb].categorie == VARGLOBALE)
+            produire(CONTENUG); 
+        produire(tabSymb[iSymb].info);
+        break;
+    case 106: produire(MUL); break;
+    case 107: produire(DIV); break;
+    case 108: produire(ADD); break;
+    case 109: produire(SOUS); break;
+    case 110: produire(INF); break;
+    case 111: produire(INFEG); break;
+    case 112: produire(SUP); break;
+    case 113: produire(SUPEG); break;
+    case 114: produire(EG); break;
+    case 115: produire(DIFF); break;
+    case 116: produire(NON); break;
+    case 117: produire(OU); break;
+    case 118: produire(ET); break;
+
+    case 200:
         if (presentIdent(code) != 0)
-            UtilLex.messErr("identifiant déjà réservé");
+            UtilLex.messErr("Identifiant déjà réservé");
+        placeIdent(code, CONSTANTE, tCour, vCour);
+        break;
+    case 201:
+        if (presentIdent(code) != 0)
+            UtilLex.messErr("Identifiant déjà réservé");
         placeIdent(code, VARGLOBALE, tCour, cptVar);
         cptVar++;
         break;
-    case 8: // réservation de la pile
-        produire(RESERVER); produire(cptVar);
-        afftabSymb();
+    case 202:
+        produire(RESERVER); produire(cptVar); break;
+
+    case 300:
+        if (tabSymb[iSymb].categorie != VARGLOBALE)
+            UtilLex.messErr("Erreur de syntaxe (lire)");
+        if (tabSymb[iSymb].type == ENT) produire(LIRENT);
+        if (tabSymb[iSymb].type == BOOL) produire(LIREBOOL);
+        produire(AFFECTERG); produire(tabSymb[iSymb].info);
         break;
-    case 9: // Pour les entiers
-        tCour = ENT;
+    case 301:
+        if (tCour == ENT) produire(ECRENT);
+        if (tCour == BOOL) produire(ECRBOOL);
         break;
-    case 10:
-        tCour = BOOL;
+    case 302:
+        if (tabSymb[iSymb].categorie != VARGLOBALE)
+            UtilLex.messErr("Erreur de syntaxe (affectation)");
+        tCour = tabSymb[iSymb].type;
         break;
+    case 303:
+        produire(AFFECTERG); produire(tabSymb[iSymb].info); break;
     // traitement des expressions
-    case 11: // Empiler une valeur primaire
-        produire(EMPILER); produire(vCour);
-        break;
-    case 12: // Récupérer un ident proprement
-        int i = presentIdent(code);
-        if (i == 0)
-            UtilLex.messErr("identifiant inexistant");
-        if (tabSymb[i].categorie == CONSTANTE)
-            vCour = tabSymb[i].info;
-        if (tabSymb[i].categorie == VARGLOBALE) {
-            produire(CONTENUG); produire(tabSymb[i].info);
-        }
-        break;
-    case 13:
-        produire(MUL); break;
-    case 14:
-        produire(DIV); break;
+    
+
     // traitement du si
         
         
