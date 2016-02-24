@@ -231,12 +231,14 @@ public static void pt(int numGen) {
     
     case 0: initialisations(); break;
     
+    // Quelques points de génération fréquemment utiles
     case 1: code = UtilLex.numId; break;
     case 5:
         iSymb = presentIdent(UtilLex.numId);
         if (iSymb == 0)
             UtilLex.messErr("Identifiant non déclaré");
         break;
+    // Gestion des erreurs de typage
     case 2:
         if (tCour == NEUTRE) tCour = ENT;
         else if (tCour != ENT) UtilLex.messErr("Erreur de typage, entier inattendu");
@@ -247,6 +249,7 @@ public static void pt(int numGen) {
         break;
     case 4: tCour = NEUTRE; break;
 
+    // Expressions
     case 100: mulFac = -1; break;
     case 101:
         vCour = UtilLex.valNb * mulFac;
@@ -264,6 +267,7 @@ public static void pt(int numGen) {
             produire(CONTENUG); 
         produire(tabSymb[iSymb].info);
         break;
+    // Production des codes Mapile
     case 106: produire(MUL); break;
     case 107: produire(DIV); break;
     case 108: produire(ADD); break;
@@ -278,6 +282,7 @@ public static void pt(int numGen) {
     case 117: produire(OU); break;
     case 118: produire(ET); break;
 
+    // Déclarations
     case 200:
         if (presentIdent(code) != 0)
             UtilLex.messErr("Identifiant déjà réservé");
@@ -292,6 +297,7 @@ public static void pt(int numGen) {
     case 202:
         produire(RESERVER); produire(cptVar); break;
 
+    // Lecture, écriture, affectation
     case 300:
         if (tabSymb[iSymb].categorie != VARGLOBALE)
             UtilLex.messErr("Erreur de syntaxe (lire)");
@@ -310,10 +316,11 @@ public static void pt(int numGen) {
         break;
     case 303:
         produire(AFFECTERG); produire(tabSymb[iSymb].info); break;
-    // traitement des expressions
-    
-
-    // traitement du si
+    // Structures conditionnelles
+    case 304: pileRep.empiler(ipo); break;
+    case 305: po[pileRep.depiler()] = ipo+1; break;
+    case 306: produire(BSIFAUX); produire(0); break;
+    case 307: produire(BINCOND); produire(0); break;
         
         
     // traitement du cond

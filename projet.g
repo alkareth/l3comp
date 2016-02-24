@@ -48,7 +48,7 @@ parfixe  : 'fixe' '(' pf ( ';' pf)* ')';
 pf       : type ident  ( ',' ident  )*;
 parmod   : 'mod' '(' pm ( ';' pm)* ')';
 pm       : type ident  ( ',' ident  )*;
-  
+
 corps        : 'debut' instructions 'fin';
 instructions : instruction ( ';' instruction)*;
 instruction  : inssi
@@ -57,7 +57,9 @@ instruction  : inssi
              | lecture
              | ecriture
              | affouappel;
-inssi        : 'si' expression 'alors' instructions ('sinon'  instructions)? 'fsi';
+inssi        : 'si' { PtGen.pt(3); } expression { PtGen.pt(4); PtGen.pt(306); PtGen.pt(304); }
+               'alors' instructions ('sinon' { PtGen.pt(307); PtGen.pt(305); PtGen.pt(304); } instructions)?
+               'fsi' { PtGen.pt(305); };
 inscond      : 'cond'  expression  ':' instructions 
                (','  expression  ':' instructions )* 
                ('aut'  instructions)? 'fcond';
@@ -72,20 +74,20 @@ effixes      : '(' (expression  (',' expression  )*)? ')';
 effmods      :'(' (ident  (',' ident  )*)? ')'; 
 
 // Il manque des vérifs de type sur les opérateurs
-expression : (exp1) ('ou' exp1 { PtGen.pt(118); } )*;
-exp1       : exp2 ('et' exp2 { PtGen.pt(117); } )*;
-exp2       : 'non' exp2 { PtGen.pt(116); }
+expression : (exp1) ('ou' { PtGen.pt(3); } exp1 { PtGen.pt(118); } )*;
+exp1       : exp2 ('et' { PtGen.pt(3); } exp2 { PtGen.pt(117); } )*;
+exp2       : 'non' { PtGen.pt(3); } exp2 { PtGen.pt(116); }
            | exp3;
-exp3       : exp4 ( '='   exp4 { PtGen.pt(114); }
-                  | '<>'  exp4 { PtGen.pt(115); }
-                  | '>'   exp4 { PtGen.pt(112); }
-                  | '>='  exp4 { PtGen.pt(113); }
-                  | '<'   exp4 { PtGen.pt(110); }
-                  | '<='  exp4 { PtGen.pt(111); } )?;
-exp4       : exp5 ( '+'   exp5 { PtGen.pt(108); }
-                  | '-'   exp5 { PtGen.pt(109); } )*;
-exp5       : primaire ( '*'    primaire { PtGen.pt(106); }
-                      | 'div'  primaire { PtGen.pt(107); } )*;
+exp3       : exp4 ( '='  { PtGen.pt(2); } exp4 { PtGen.pt(114); }
+                  | '<>' { PtGen.pt(2); } exp4 { PtGen.pt(115); }
+                  | '>'  { PtGen.pt(2); } exp4 { PtGen.pt(112); }
+                  | '>=' { PtGen.pt(2); } exp4 { PtGen.pt(113); }
+                  | '<'  { PtGen.pt(2); } exp4 { PtGen.pt(110); }
+                  | '<=' { PtGen.pt(2); } exp4 { PtGen.pt(111); } )?;
+exp4       : exp5 ( '+'  { PtGen.pt(2); } exp5 { PtGen.pt(108); }
+                  | '-'  { PtGen.pt(2); } exp5 { PtGen.pt(109); } )*;
+exp5       : primaire ( '*'   { PtGen.pt(2); } primaire { PtGen.pt(106); }
+                      | 'div' { PtGen.pt(2); } primaire { PtGen.pt(107); } )*;
 primaire   : valeur { PtGen.pt(104); }
            | ident { PtGen.pt(5); PtGen.pt(105); }
            | '(' expression ')';
