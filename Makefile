@@ -5,6 +5,10 @@ all: projet.g PtGen.java
 run:
 	java -cp antlr-3.5.2-complete.jar:lib:. projet
 
+test:
+	java -cp lib:. Mapile
+
 clean:
 	rm -rf *.class
 	rm -rf tests/*.obj
+	rm -rf tests/*.gen

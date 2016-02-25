@@ -239,15 +239,10 @@ public static void pt(int numGen) {
             UtilLex.messErr("Identifiant non déclaré");
         break;
     // Gestion des erreurs de typage
-    case 2:
-        if (tCour == NEUTRE) tCour = ENT;
-        else if (tCour != ENT) UtilLex.messErr("Erreur de typage, entier inattendu");
-        break;
-    case 3:
-        if (tCour == NEUTRE) tCour = BOOL;
-        else if (tCour != BOOL) UtilLex.messErr("Erreur de typage, booléen inattendu");
-        break;
-    case 4: tCour = NEUTRE; break;
+    case 2: tCour = ENT; break;
+    case 3: tCour = BOOL; break;
+    case 4: verifEnt(); break;
+    case 6: verifBool(); break;
 
     // Expressions
     case 100: mulFac = -1; break;
@@ -259,8 +254,7 @@ public static void pt(int numGen) {
     case 103: vCour = FAUX; break;
     case 104: produire(EMPILER); produire(vCour); break;
     case 105:
-        if (tCour == NEUTRE) tCour = tabSymb[iSymb].type;
-        else if (tCour != tabSymb[iSymb].type) UtilLex.messErr("Erreur de typage");
+        tCour = tabSymb[iSymb].type;
         if (tabSymb[iSymb].categorie == CONSTANTE)
             produire(EMPILER);
         if (tabSymb[iSymb].categorie == VARGLOBALE)
@@ -316,21 +310,34 @@ public static void pt(int numGen) {
         break;
     case 303:
         produire(AFFECTERG); produire(tabSymb[iSymb].info); break;
-    // Structures conditionnelles
+    // Structures conditionnelles et boucle
     case 304: pileRep.empiler(ipo); break;
     case 305: po[pileRep.depiler()] = ipo+1; break;
-    case 306: produire(BSIFAUX); produire(0); break;
-    case 307: produire(BINCOND); produire(0); break;
+    case 306: po[pileRep.depiler()] = ipo+3; break;
+    case 307: produire(BSIFAUX); produire(0); break;
+    case 308: produire(BINCOND); produire(0); break;
+    case 309: produire(BINCOND); produire(pileRep.depiler()); break;
+    case 310:
+        int last = pileRep.depiler();
+        while (last != 0) {
+            int prev = po[last];
+            po[last] = ipo+1;
+            last = prev;
+        }
+        break;
         
         
     // traitement du cond
     
     // etc
     
-    
+    case 999:
+        produire(ARRET);
+        constObj();
+        constGen();
+        break;
     default : System.out.println("Point de génération non prévu dans votre liste");break;
     
     }
-    constObj();
     }
 }
