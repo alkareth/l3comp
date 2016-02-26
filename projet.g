@@ -28,7 +28,7 @@ options {
 
 unite      : unitprog EOF | unitmodule  EOF;
 unitprog   : 'programme' ident ':' declarations  
-             corps { PtGen.pt(999); System.out.println("succès, arret de la compilation "); };
+             corps { PtGen.pt(666); System.out.println("succès, arret de la compilation "); };
 unitmodule : 'module' ident ':' declarations;
 
 declarations : partiedef? partieref? consts? vars? decprocs?;
@@ -66,7 +66,7 @@ inscond      : 'cond' expression { PtGen.pt(6); PtGen.pt(307); PtGen.pt(304); } 
                       instructions { PtGen.pt(306); PtGen.pt(309); PtGen.pt(304); } )* 
                ('aut' instructions)? { PtGen.pt(310); } 'fcond';
 boucle       : 'ttq'  { PtGen.pt(304); } expression { PtGen.pt(6); PtGen.pt(307); PtGen.pt(304); }
-               'faire' instructions { PtGen.pt(306); PtGen.pt(309); } 'fait';
+               'faire' instructions { PtGen.pt(306); PtGen.pt(311); } 'fait';
 lecture      : 'lire' '(' ident { PtGen.pt(5); PtGen.pt(300); }
                     ( ',' ident { PtGen.pt(5); PtGen.pt(300); } )* ')';
 ecriture     : 'ecrire' '(' expression { PtGen.pt(301); }
