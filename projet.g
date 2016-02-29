@@ -36,27 +36,22 @@ partiedef    : 'def' ident  (',' ident )* ptvg;
 partieref    : 'ref'  specif (',' specif)* ptvg;
 specif       : ident ( 'fixe' '(' type ( ',' type  )* ')' )? 
                      ( 'mod'  '(' type ( ',' type  )* ')' )?;
-consts       : 'const' ( ident { PtGen.pt(1); } '=' valeur { PtGen.pt(200); } ptvg )+;
-vars         : 'var' ( type ident { PtGen.pt(1); PtGen.pt(201); }
-                     ( ','  ident { PtGen.pt(1); PtGen.pt(201); } )* ptvg )+ { PtGen.pt(202); };
+consts       : 'const' ( ident { PtGen.pt(200); } '=' valeur { PtGen.pt(205); } ptvg )+;
+vars         : 'var' ( type ident { PtGen.pt(201); }
+                     ( ','  ident { PtGen.pt(201); } )* ptvg )+ { PtGen.pt(202); };
 type         : 'ent' { PtGen.pt(2); } | 'bool' { PtGen.pt(3); };
 
-decprocs : (decproc ptvg)+;
-decproc  : 'proc' ident parfixe? parmod? consts? vars? corps;
+decprocs : { PtGen.pt(308); PtGen.pt(304); } (decproc ptvg)+ { PtGen.pt(305); };
+decproc  : 'proc' ident { PtGen.pt(203); } parfixe? parmod? { PtGen.pt(204); } consts? vars? corps { PtGen.pt(208); };
 ptvg     : ';' |;
 parfixe  : 'fixe' '(' pf ( ';' pf)* ')';
-pf       : type ident  ( ',' ident  )*;
+pf       : type ident { PtGen.pt(206); } ( ',' ident { PtGen.pt(206); } )*;
 parmod   : 'mod' '(' pm ( ';' pm)* ')';
-pm       : type ident  ( ',' ident  )*;
+pm       : type ident { PtGen.pt(207); } ( ',' ident { PtGen.pt(207); } )*;
 
 corps        : 'debut' instructions 'fin';
 instructions : instruction ( ';' instruction)*;
-instruction  : inssi
-             | inscond
-             | boucle
-             | lecture
-             | ecriture
-             | affouappel;
+instruction  : inssi | inscond | boucle | lecture | ecriture | affouappel;
 inssi        : 'si' expression { PtGen.pt(6); PtGen.pt(307); PtGen.pt(304); }
                'alors' instructions ('sinon' { PtGen.pt(308); PtGen.pt(305); PtGen.pt(304); } instructions)?
                'fsi' { PtGen.pt(305); };
@@ -67,11 +62,11 @@ inscond      : 'cond' expression { PtGen.pt(6); PtGen.pt(307); PtGen.pt(304); } 
                ('aut' instructions)? { PtGen.pt(310); } 'fcond';
 boucle       : 'ttq'  { PtGen.pt(304); } expression { PtGen.pt(6); PtGen.pt(307); PtGen.pt(304); }
                'faire' instructions { PtGen.pt(306); PtGen.pt(311); } 'fait';
-lecture      : 'lire' '(' ident { PtGen.pt(5); PtGen.pt(300); }
-                    ( ',' ident { PtGen.pt(5); PtGen.pt(300); } )* ')';
+lecture      : 'lire' '(' ident { PtGen.pt(1); PtGen.pt(300); }
+                    ( ',' ident { PtGen.pt(1); PtGen.pt(300); } )* ')';
 ecriture     : 'ecrire' '(' expression { PtGen.pt(301); }
                       ( ',' expression { PtGen.pt(301); } )* ')';
-affouappel   : ident { PtGen.pt(5); PtGen.pt(302); } ( ':=' expression { PtGen.pt(303); }
+affouappel   : ident { PtGen.pt(1); PtGen.pt(302); } ( ':=' expression { PtGen.pt(303); }
                       | (effixes (effmods)?)? );
 effixes      : '(' (expression  (',' expression  )*)? ')';
 effmods      :'(' (ident  (',' ident  )*)? ')'; 
@@ -91,7 +86,7 @@ exp4       : exp5 ({ PtGen.pt(4); } '+'  exp5 { PtGen.pt(4); PtGen.pt(108); }
 exp5       : primaire ({ PtGen.pt(4); } '*' primaire { PtGen.pt(4); PtGen.pt(106); }
                       |{ PtGen.pt(4); } 'div' primaire { PtGen.pt(4);  PtGen.pt(107); } )*;
 primaire   : valeur { PtGen.pt(104); }
-           | ident { PtGen.pt(5); PtGen.pt(105); }
+           | ident { PtGen.pt(1); PtGen.pt(105); }
            | '(' expression ')';
 valeur     : nbentier { PtGen.pt(2); PtGen.pt(101); }
            | '+' nbentier { PtGen.pt(2); PtGen.pt(101); }

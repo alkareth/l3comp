@@ -165,6 +165,7 @@ private static void vecteurTrans(int x) { // ajout d'un doublet au vecteur de tr
 public static String trinome="Thomas Boucherie, Léo Noël-Baron et Thierry Sampaio";
 
 private static int cptVar; // compteur de variables
+private static int cptPar; // compteur de paramètres
 private static int mulFac; // facteur pour les constantes négatives
 private static int code; // code de l'ident courant
 private static int iSymb; // adresse de la table des symboles
@@ -178,7 +179,7 @@ private static void initialisations() { // à compléter si nécessaire mais NE 
     initvTrans(); 
     desc=new Descripteur(); // initialisation du descripteur pour compilation séparée   
     it = 0; bc = 1; ipo = 0;
-    cptVar = 0; mulFac = 1;
+    cptVar = 0; cptPar = 0; mulFac = 1;
     code = 0; iSymb = 0;
     tCour = NEUTRE; vCour = 0;
 } // initialisations
@@ -192,9 +193,8 @@ public static void pt(int numGen) {
     case 0: initialisations(); break;
     
     // Quelques points de génération fréquemment utiles
-    case 1: code = UtilLex.numId; break;
-    case 5:
-        iSymb = presentIdent(UtilLex.numId);
+    case 1:
+        iSymb = presentIdent(bc);
         if (iSymb == 0)
             UtilLex.messErr("Identifiant non déclaré");
         break;
@@ -215,11 +215,18 @@ public static void pt(int numGen) {
     case 104: produire(EMPILER); produire(vCour); break;
     case 105:
         tCour = tabSymb[iSymb].type;
-        if (tabSymb[iSymb].categorie == CONSTANTE)
-            produire(EMPILER);
-        if (tabSymb[iSymb].categorie == VARGLOBALE)
-            produire(CONTENUG); 
+        int cat = tabSymb[iSymb].categorie;
+        switch (cat) {
+            case CONSTANTE:
+                produire(EMPILER); break;
+            case VARGLOBALE:
+                produire(CONTENUG); break;
+            case VARLOCALE: case PARAMFIXE: case PARAMMOD:
+                produire(CONTENUL); break;
+        }
         produire(tabSymb[iSymb].info);
+        if (cat == VARLOCALE || cat == PARAMFIXE) produire(0);
+        else if (cat == PARAMMOD) produire(1);
         break;
     // Production des codes Mapile
     case 106: produire(MUL); break;
@@ -238,18 +245,49 @@ public static void pt(int numGen) {
 
     // Déclarations
     case 200:
-        if (presentIdent(code) != 0)
+        if (presentIdent(bc) != 0)
             UtilLex.messErr("Identifiant déjà réservé");
-        placeIdent(code, CONSTANTE, tCour, vCour);
+        placeIdent(UtilLex.numId, CONSTANTE, tCour, 0);
         break;
+    case 205: tabSymb[it].info = vCour; break;
     case 201:
-        if (presentIdent(code) != 0)
+        if (presentIdent(bc) != 0)
             UtilLex.messErr("Identifiant déjà réservé");
-        placeIdent(code, VARGLOBALE, tCour, cptVar);
+        if (bc == 1)
+            placeIdent(UtilLex.numId, VARGLOBALE, tCour, cptVar);
+        else
+            placeIdent(UtilLex.numId, VARLOCALE, tCour, cptPar + 2 + cptVar);
         cptVar++;
         break;
     case 202:
-        produire(RESERVER); produire(cptVar); break;
+        produire(RESERVER); produire(cptVar); cptVar = 0; break;
+    case 203:
+        if (presentIdent(bc) != 0)
+            UtilLex.messErr("Identifiant déjà réservé");
+        placeIdent(UtilLex.numId, PROC, NEUTRE, ipo+1);
+        placeIdent(-1, PRIVEE, NEUTRE, 0);
+        bc = it+1;
+        break;
+    case 204: tabSymb[bc-1].info = cptPar; break;
+    case 206:
+        if (presentIdent(bc) != 0)
+            UtilLex.messErr("Identifiant déjà réservé");
+        placeIdent(UtilLex.numId, PARAMFIXE, tCour, cptPar);
+        cptPar++;
+        break;
+    case 207:
+        if (presentIdent(bc) != 0)
+            UtilLex.messErr("Identifiant déjà réservé");
+        placeIdent(UtilLex.numId, PARAMMOD, tCour, cptPar);
+        cptPar++;
+        break;
+    case 208:
+        produire(RETOUR); produire(tabSymb[bc-1].info);
+        it = bc + tabSymb[bc-1].info - 1;
+        for (int i=bc; i<=it; i++) tabSymb[i].code = -1;
+        bc = 1;
+        afftabSymb();
+        break;
 
     // Lecture, écriture, affectation
     case 300:
