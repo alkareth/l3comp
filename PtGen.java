@@ -171,6 +171,10 @@ private static int code; // code de l'ident courant
 private static int iSymb; // adresse de la table des symboles
 private static int tCour; // type courant pour vérifications
 private static int vCour; // valeur de l'expression compilée le cas echeant
+private static int nbPars;
+private static int adProc;
+private static int nbParsLu;
+private static int curPar;
 
 // initialisations
 // ---------------
@@ -180,6 +184,7 @@ private static void initialisations() { // à compléter si nécessaire mais NE 
     desc=new Descripteur(); // initialisation du descripteur pour compilation séparée   
     it = 0; bc = 1; ipo = 0;
     cptVar = 0; cptPar = 0; mulFac = 1;
+    nbPars = 0; curPar = 0;
     code = 0; iSymb = 0;
     tCour = NEUTRE; vCour = 0;
 } // initialisations
@@ -194,7 +199,7 @@ public static void pt(int numGen) {
     
     // Quelques points de génération fréquemment utiles
     case 1:
-        iSymb = presentIdent(bc);
+        iSymb = presentIdent(bc-2);
         if (iSymb == 0)
             UtilLex.messErr("Identifiant non déclaré");
         break;
@@ -215,7 +220,7 @@ public static void pt(int numGen) {
     case 104: produire(EMPILER); produire(vCour); break;
     case 105:
         tCour = tabSymb[iSymb].type;
-        int cat = tabSymb[iSymb].categorie;
+        cat = tabSymb[iSymb].categorie;
         switch (cat) {
             case CONSTANTE:
                 produire(EMPILER); break;
@@ -268,7 +273,7 @@ public static void pt(int numGen) {
         placeIdent(-1, PRIVEE, NEUTRE, 0);
         bc = it+1;
         break;
-    case 204: tabSymb[bc-1].info = cptPar; break;
+    case 204: tabSymb[bc-1].info = cptPar; cptPar = 0; break;
     case 206:
         if (presentIdent(bc) != 0)
             UtilLex.messErr("Identifiant déjà réservé");
@@ -286,28 +291,35 @@ public static void pt(int numGen) {
         it = bc + tabSymb[bc-1].info - 1;
         for (int i=bc; i<=it; i++) tabSymb[i].code = -1;
         bc = 1;
+        break;
+    case 777:
         afftabSymb();
         break;
 
     // Lecture, écriture, affectation
+    case 399:
+        if (tabSymb[iSymb].categorie != VARGLOBALE && 
+            tabSymb[iSymb].categorie != VARLOCALE && 
+            tabSymb[iSymb].categorie != PARAMMOD)
+            UtilLex.messErr("Impossible d'affecter cet identifiant");
+        break;
     case 300:
-        if (tabSymb[iSymb].categorie != VARGLOBALE)
-            UtilLex.messErr("Erreur de syntaxe (lire)");
         if (tabSymb[iSymb].type == ENT) produire(LIRENT);
         if (tabSymb[iSymb].type == BOOL) produire(LIREBOOL);
-        produire(AFFECTERG); produire(tabSymb[iSymb].info);
         break;
     case 301:
         if (tCour == ENT) produire(ECRENT);
         if (tCour == BOOL) produire(ECRBOOL);
         break;
-    case 302:
-        if (tabSymb[iSymb].categorie != VARGLOBALE)
-            UtilLex.messErr("Erreur de syntaxe (affectation)");
-        tCour = tabSymb[iSymb].type;
-        break;
+    case 302: tCour = tabSymb[iSymb].type; break;
     case 303:
-        produire(AFFECTERG); produire(tabSymb[iSymb].info); break;
+        cat = tabSymb[iSymb].categorie;
+        if (cat == VARGLOBALE) produire(AFFECTERG);
+        else produire(AFFECTERL);
+        produire(tabSymb[iSymb].info);
+        if (cat == VARLOCALE) produire(0);
+        if (cat == PARAMMOD) produire(1);
+        break;
     // Structures conditionnelles et boucle
     case 304: pileRep.empiler(ipo); break;
     case 305: po[pileRep.depiler()] = ipo+1; break;
@@ -324,6 +336,39 @@ public static void pt(int numGen) {
             last = prev;
         }
         break;
+    // Appel de procédure
+    case 312:
+        adProc = tabSymb[iSymb].info;
+        nbPars = tabSymb[iSymb+1].info;
+        nbParsLu = 0;
+        curPar = iSymb+2;
+        break;
+    case 313:
+        if (nbParsLu > nbPars)
+            UtilLex.messErr("Trop de paramètres");
+        if (tabSymb[curPar].categorie != PARAMFIXE)
+            UtilLex.messErr("Mauvais paramètre");
+        if (tabSymb[curPar].type != tCour)
+            UtilLex.messErr("Erreur de typage");
+        nbParsLu++; curPar++;
+        break;
+    case 314:
+        if (nbParsLu > nbPars)
+            UtilLex.messErr("Trop de paramètres");
+        if (tabSymb[curPar].categorie != PARAMMOD)
+            UtilLex.messErr("Mauvais paramètre");
+        if (tabSymb[curPar].type != tabSymb[iSymb].type)
+            UtilLex.messErr("Erreur de typage");
+        nbParsLu++; curPar++;
+        cat = tabSymb[iSymb].categorie;
+        if (cat == VARGLOBALE) produire(EMPILERADG);
+        else produire(EMPILERADL);
+        produire(tabSymb[iSymb].info);
+        if (cat == VARLOCALE) produire(0);
+        if (cat == PARAMMOD) produire(1);
+        break;
+    case 315:
+        produire(APPEL); produire(adProc); produire(nbPars); break;
     
     case 666:
         produire(ARRET);

@@ -42,7 +42,7 @@ vars         : 'var' ( type ident { PtGen.pt(201); }
 type         : 'ent' { PtGen.pt(2); } | 'bool' { PtGen.pt(3); };
 
 decprocs : { PtGen.pt(308); PtGen.pt(304); } (decproc ptvg)+ { PtGen.pt(305); };
-decproc  : 'proc' ident { PtGen.pt(203); } parfixe? parmod? { PtGen.pt(204); } consts? vars? corps { PtGen.pt(208); };
+decproc  : 'proc' ident { PtGen.pt(203); } parfixe? parmod? { PtGen.pt(204); } consts? vars? { PtGen.pt(777); } corps { PtGen.pt(208); };
 ptvg     : ';' |;
 parfixe  : 'fixe' '(' pf ( ';' pf)* ')';
 pf       : type ident { PtGen.pt(206); } ( ',' ident { PtGen.pt(206); } )*;
@@ -60,16 +60,17 @@ inscond      : 'cond' expression { PtGen.pt(6); PtGen.pt(307); PtGen.pt(304); } 
                ( ','  expression { PtGen.pt(6); PtGen.pt(307); PtGen.pt(304); } ':'
                       instructions { PtGen.pt(306); PtGen.pt(309); PtGen.pt(304); } )* 
                ('aut' instructions)? { PtGen.pt(310); } 'fcond';
-boucle       : 'ttq'  { PtGen.pt(304); } expression { PtGen.pt(6); PtGen.pt(307); PtGen.pt(304); }
+boucle       : 'ttq' { PtGen.pt(304); } expression { PtGen.pt(6); PtGen.pt(307); PtGen.pt(304); }
                'faire' instructions { PtGen.pt(306); PtGen.pt(311); } 'fait';
-lecture      : 'lire' '(' ident { PtGen.pt(1); PtGen.pt(300); }
-                    ( ',' ident { PtGen.pt(1); PtGen.pt(300); } )* ')';
+lecture      : 'lire' '(' ident { PtGen.pt(1); PtGen.pt(399); PtGen.pt(300); PtGen.pt(303); }
+                    ( ',' ident { PtGen.pt(1); PtGen.pt(399); PtGen.pt(300); PtGen.pt(303); } )* ')';
 ecriture     : 'ecrire' '(' expression { PtGen.pt(301); }
                       ( ',' expression { PtGen.pt(301); } )* ')';
-affouappel   : ident { PtGen.pt(1); PtGen.pt(302); } ( ':=' expression { PtGen.pt(303); }
-                      | (effixes (effmods)?)? );
-effixes      : '(' (expression  (',' expression  )*)? ')';
-effmods      :'(' (ident  (',' ident  )*)? ')'; 
+affouappel   : ident { PtGen.pt(1); } ( ':=' { PtGen.pt(399); PtGen.pt(302); } expression { PtGen.pt(303); }
+                      | { PtGen.pt(312); } (effixes (effmods)?)? { PtGen.pt(315); } );
+effixes      : '(' (expression { PtGen.pt(313); } (',' expression { PtGen.pt(313); } )*)? ')';
+effmods      :'(' (ident { PtGen.pt(1); PtGen.pt(399); PtGen.pt(314); }
+              (',' ident { PtGen.pt(1); PtGen.pt(399); PtGen.pt(314); } )*)? ')'; 
 
 expression : (exp1) ({ PtGen.pt(6); } 'ou' exp1 { PtGen.pt(6); PtGen.pt(118); } )*;
 exp1       : exp2 ({ PtGen.pt(6); } 'et' exp2 { PtGen.pt(6); PtGen.pt(117); } )*;
