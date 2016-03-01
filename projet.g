@@ -36,18 +36,18 @@ partiedef    : 'def' ident  (',' ident )* ptvg;
 partieref    : 'ref'  specif (',' specif)* ptvg;
 specif       : ident ( 'fixe' '(' type ( ',' type  )* ')' )? 
                      ( 'mod'  '(' type ( ',' type  )* ')' )?;
-consts       : 'const' ( ident { PtGen.pt(200); } '=' valeur { PtGen.pt(205); } ptvg )+;
-vars         : 'var' ( type ident { PtGen.pt(201); }
-                     ( ','  ident { PtGen.pt(201); } )* ptvg )+ { PtGen.pt(202); };
+consts       : 'const' ( ident { PtGen.pt(299); PtGen.pt(200); } '=' valeur { PtGen.pt(205); } ptvg )+;
+vars         : 'var' ( type ident { PtGen.pt(299); PtGen.pt(201); }
+                     ( ','  ident { PtGen.pt(299); PtGen.pt(201); } )* ptvg )+ { PtGen.pt(202); };
 type         : 'ent' { PtGen.pt(2); } | 'bool' { PtGen.pt(3); };
 
 decprocs : { PtGen.pt(308); PtGen.pt(304); } (decproc ptvg)+ { PtGen.pt(305); };
-decproc  : 'proc' ident { PtGen.pt(203); } parfixe? parmod? { PtGen.pt(204); } consts? vars? { PtGen.pt(777); } corps { PtGen.pt(208); };
+decproc  : 'proc' ident { PtGen.pt(203); } parfixe? parmod? consts? vars? { PtGen.pt(204); } corps { PtGen.pt(208); };
 ptvg     : ';' |;
 parfixe  : 'fixe' '(' pf ( ';' pf)* ')';
-pf       : type ident { PtGen.pt(206); } ( ',' ident { PtGen.pt(206); } )*;
+pf       : type ident { PtGen.pt(299); PtGen.pt(206); } ( ',' ident { PtGen.pt(299); PtGen.pt(206); } )*;
 parmod   : 'mod' '(' pm ( ';' pm)* ')';
-pm       : type ident { PtGen.pt(207); } ( ',' ident { PtGen.pt(207); } )*;
+pm       : type ident { PtGen.pt(299); PtGen.pt(207); } ( ',' ident { PtGen.pt(299); PtGen.pt(207); } )*;
 
 corps        : 'debut' instructions 'fin';
 instructions : instruction ( ';' instruction)*;

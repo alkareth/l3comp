@@ -169,12 +169,14 @@ private static int cptPar; // compteur de paramètres
 private static int mulFac; // facteur pour les constantes négatives
 private static int code; // code de l'ident courant
 private static int iSymb; // adresse de la table des symboles
+private static int iAff; // adresse de la table des symboles
 private static int tCour; // type courant pour vérifications
 private static int vCour; // valeur de l'expression compilée le cas echeant
 private static int nbPars;
 private static int adProc;
 private static int nbParsLu;
 private static int curPar;
+private static int cat;
 
 // initialisations
 // ---------------
@@ -193,13 +195,12 @@ private static void initialisations() { // à compléter si nécessaire mais NE 
 // -----------------------------
 
 public static void pt(int numGen) {
-    int cat;
     switch (numGen) {
     case 0: initialisations(); break;
     
     // Quelques points de génération fréquemment utiles
     case 1:
-        iSymb = presentIdent(bc-2);
+        iSymb = presentIdent(1);
         if (iSymb == 0)
             UtilLex.messErr("Identifiant non déclaré");
         break;
@@ -249,25 +250,21 @@ public static void pt(int numGen) {
     case 118: produire(ET); break;
 
     // Déclarations
-    case 200:
+    case 299:
         if (presentIdent(bc) != 0)
             UtilLex.messErr("Identifiant déjà réservé");
-        placeIdent(UtilLex.numId, CONSTANTE, tCour, 0);
         break;
-    case 205: tabSymb[it].info = vCour; break;
+    case 200: placeIdent(UtilLex.numId, CONSTANTE, NEUTRE, 0); break;
+    case 205: tabSymb[it].type = tCour; tabSymb[it].info = vCour; break;
     case 201:
-        if (presentIdent(bc) != 0)
-            UtilLex.messErr("Identifiant déjà réservé");
-        if (bc == 1)
-            placeIdent(UtilLex.numId, VARGLOBALE, tCour, cptVar);
-        else
-            placeIdent(UtilLex.numId, VARLOCALE, tCour, cptPar + 2 + cptVar);
+        if (bc == 1) placeIdent(UtilLex.numId, VARGLOBALE, tCour, cptVar);
+        else placeIdent(UtilLex.numId, VARLOCALE, tCour, cptPar + 2 + cptVar);
         cptVar++;
         break;
     case 202:
         produire(RESERVER); produire(cptVar); cptVar = 0; break;
     case 203:
-        if (presentIdent(bc) != 0)
+        if (presentIdent(1) != 0)
             UtilLex.messErr("Identifiant déjà réservé");
         placeIdent(UtilLex.numId, PROC, NEUTRE, ipo+1);
         placeIdent(-1, PRIVEE, NEUTRE, 0);
@@ -275,14 +272,10 @@ public static void pt(int numGen) {
         break;
     case 204: tabSymb[bc-1].info = cptPar; cptPar = 0; break;
     case 206:
-        if (presentIdent(bc) != 0)
-            UtilLex.messErr("Identifiant déjà réservé");
         placeIdent(UtilLex.numId, PARAMFIXE, tCour, cptPar);
         cptPar++;
         break;
     case 207:
-        if (presentIdent(bc) != 0)
-            UtilLex.messErr("Identifiant déjà réservé");
         placeIdent(UtilLex.numId, PARAMMOD, tCour, cptPar);
         cptPar++;
         break;
@@ -292,16 +285,13 @@ public static void pt(int numGen) {
         for (int i=bc; i<=it; i++) tabSymb[i].code = -1;
         bc = 1;
         break;
-    case 777:
-        afftabSymb();
-        break;
 
     // Lecture, écriture, affectation
     case 399:
-        if (tabSymb[iSymb].categorie != VARGLOBALE && 
-            tabSymb[iSymb].categorie != VARLOCALE && 
-            tabSymb[iSymb].categorie != PARAMMOD)
+        cat = tabSymb[iSymb].categorie;
+        if (cat != VARGLOBALE && cat != VARLOCALE && cat != PARAMMOD)
             UtilLex.messErr("Impossible d'affecter cet identifiant");
+        iAff = iSymb;
         break;
     case 300:
         if (tabSymb[iSymb].type == ENT) produire(LIRENT);
@@ -313,10 +303,10 @@ public static void pt(int numGen) {
         break;
     case 302: tCour = tabSymb[iSymb].type; break;
     case 303:
-        cat = tabSymb[iSymb].categorie;
+        cat = tabSymb[iAff].categorie;
         if (cat == VARGLOBALE) produire(AFFECTERG);
         else produire(AFFECTERL);
-        produire(tabSymb[iSymb].info);
+        produire(tabSymb[iAff].info);
         if (cat == VARLOCALE) produire(0);
         if (cat == PARAMMOD) produire(1);
         break;
