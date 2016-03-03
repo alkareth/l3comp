@@ -5,7 +5,7 @@ var ent n, fn;
 proc fact fixe (ent i) mod (ent fi)
 	var ent fi1;
 debut
-	si i=1 alors
+	si i<=1 alors
 		fi:=1
 	sinon
 		fact(i-1)(fi1);

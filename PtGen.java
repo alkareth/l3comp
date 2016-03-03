@@ -90,11 +90,11 @@ private static void afftabSymb() { // affiche la table des symboles
 // ----------------
 
 private static void verifEnt() {
-    if (tCour!=ENT) UtilLex.messErr("expression entière attendue");
+    if (tCour!=ENT) UtilLex.messErr("Expression entière attendue");
 }
 
 private static void verifBool() {
-    if (tCour!=BOOL) UtilLex.messErr("expression booléenne attendue");
+    if (tCour!=BOOL) UtilLex.messErr("Expression booléenne attendue");
 }
 
 // pile pour gérer les chaînes de reprise et les branchements en avant
@@ -172,11 +172,11 @@ private static int iSymb; // adresse de la table des symboles
 private static int iAff; // adresse de la table des symboles
 private static int tCour; // type courant pour vérifications
 private static int vCour; // valeur de l'expression compilée le cas echeant
+// Variables pour l'appel de procédures
 private static int nbPars;
 private static int adProc;
 private static int nbParsLu;
 private static int curPar;
-private static int cat;
 
 // initialisations
 // ---------------
@@ -186,19 +186,24 @@ private static void initialisations() { // à compléter si nécessaire mais NE 
     desc=new Descripteur(); // initialisation du descripteur pour compilation séparée   
     it = 0; bc = 1; ipo = 0;
     cptVar = 0; cptPar = 0; mulFac = 1;
-    nbPars = 0; curPar = 0;
     code = 0; iSymb = 0;
     tCour = NEUTRE; vCour = 0;
+    nbPars = 0; nbParsLu = 0;
+    adProc = 0; curPar = 0; 
 } // initialisations
 
 // code des points de génération
 // -----------------------------
 
 public static void pt(int numGen) {
+    int cat;
     switch (numGen) {
     case 0: initialisations(); break;
     
-    // Quelques points de génération fréquemment utiles
+    /*******************************************
+     * Points de génération fréquemment utiles *
+     *******************************************/
+    // Récupération de l'indice d'un ident dans tabSymb
     case 1:
         iSymb = presentIdent(1);
         if (iSymb == 0)
@@ -210,19 +215,24 @@ public static void pt(int numGen) {
     case 4: verifEnt(); break;
     case 6: verifBool(); break;
 
-    // Expressions
-    case 100: mulFac = -1; break;
+    /*******************************************
+     * Expressions arithmétiques et booléennes *
+     *******************************************/
+    // Valeurs entières
+    case 100: mulFac = -1; break; // Pour les valeurs négatives
     case 101:
         vCour = UtilLex.valNb * mulFac;
         mulFac = 1;
         break;
+    // Valeurs booléennes
     case 102: vCour = VRAI; break;
     case 103: vCour = FAUX; break;
+    // Empilage des valeurs et idents
     case 104: produire(EMPILER); produire(vCour); break;
     case 105:
         tCour = tabSymb[iSymb].type;
         cat = tabSymb[iSymb].categorie;
-        switch (cat) {
+        switch (cat) { // Selon le type d'ident lu, différents traitements
             case CONSTANTE:
                 produire(EMPILER); break;
             case VARGLOBALE:
@@ -249,60 +259,70 @@ public static void pt(int numGen) {
     case 117: produire(OU); break;
     case 118: produire(ET); break;
 
-    // Déclarations
-    case 299:
+    /*******************************************
+     * Déclaration des variables et procédures *
+     *******************************************/
+    case 299: // Test générique
         if (presentIdent(bc) != 0)
             UtilLex.messErr("Identifiant déjà réservé");
         break;
+    // Constantes
     case 200: placeIdent(UtilLex.numId, CONSTANTE, NEUTRE, 0); break;
     case 205: tabSymb[it].type = tCour; tabSymb[it].info = vCour; break;
+    // Variables (distinction variable locale / globale)
     case 201:
         if (bc == 1) placeIdent(UtilLex.numId, VARGLOBALE, tCour, cptVar);
         else placeIdent(UtilLex.numId, VARLOCALE, tCour, cptPar + 2 + cptVar);
+        // Le +2 laisse les deux cases nécessaires pour les données de liaison
         cptVar++;
         break;
     case 202:
         produire(RESERVER); produire(cptVar); cptVar = 0; break;
+    // Procédures
     case 203:
         if (presentIdent(1) != 0)
-            UtilLex.messErr("Identifiant déjà réservé");
+            UtilLex.messErr("Procédure déjà déclarée");
         placeIdent(UtilLex.numId, PROC, NEUTRE, ipo+1);
         placeIdent(-1, PRIVEE, NEUTRE, 0);
-        bc = it+1;
+        bc = it+1; // Changement de contexte
         break;
+    // Résolution du nombre de paramètres
     case 204: tabSymb[bc-1].info = cptPar; cptPar = 0; break;
-    case 206:
+    case 206: // Déclaration des paramètres fixes
         placeIdent(UtilLex.numId, PARAMFIXE, tCour, cptPar);
         cptPar++;
         break;
-    case 207:
+    case 207: // Déclaration des paramètres modifiables
         placeIdent(UtilLex.numId, PARAMMOD, tCour, cptPar);
         cptPar++;
         break;
-    case 208:
+    case 208: // Fin de déclaration d'une procédure
         produire(RETOUR); produire(tabSymb[bc-1].info);
         it = bc + tabSymb[bc-1].info - 1;
         for (int i=bc; i<=it; i++) tabSymb[i].code = -1;
         bc = 1;
         break;
 
-    // Lecture, écriture, affectation
-    case 399:
+    /******************************
+     * Instructions (toutes, oui) *
+     ******************************/
+    case 399: // Test générique (erreur si l'ident n'est pas modifiable)
         cat = tabSymb[iSymb].categorie;
         if (cat != VARGLOBALE && cat != VARLOCALE && cat != PARAMMOD)
             UtilLex.messErr("Impossible d'affecter cet identifiant");
         iAff = iSymb;
         break;
-    case 300:
+    case 300: // Instruction lire
         if (tabSymb[iSymb].type == ENT) produire(LIRENT);
         if (tabSymb[iSymb].type == BOOL) produire(LIREBOOL);
         break;
-    case 301:
+    case 301: // Instruction ecrire
         if (tCour == ENT) produire(ECRENT);
         if (tCour == BOOL) produire(ECRBOOL);
         break;
+    // Vérification de type pour l'affectation
     case 302: tCour = tabSymb[iSymb].type; break;
-    case 303:
+    case 303: // Enregistrement d'une valeur (lire / affectation)
         cat = tabSymb[iAff].categorie;
         if (cat == VARGLOBALE) produire(AFFECTERG);
         else produire(AFFECTERL);
@@ -310,7 +330,10 @@ public static void pt(int numGen) {
         if (cat == VARLOCALE) produire(0);
         if (cat == PARAMMOD) produire(1);
         break;
-    // Structures conditionnelles et boucle
+    // si, ttq et cond
+    // Pour ces trois instructions, les 8 points de génération suivants,
+    // génériques et judicieusement placés, permettent de gérer les branchements
+    // et résolutions (voir grammaire)
     case 304: pileRep.empiler(ipo); break;
     case 305: po[pileRep.depiler()] = ipo+1; break;
     case 306: po[pileRep.depiler()] = ipo+3; break;
@@ -318,7 +341,7 @@ public static void pt(int numGen) {
     case 308: produire(BINCOND); produire(0); break;
     case 309: produire(BINCOND); produire(pileRep.depiler()); break;
     case 311: produire(BINCOND); produire(pileRep.depiler()+1); break;
-    case 310:
+    case 310: // Résolution des BINCOND 0 pour l'instruction cond
         int last = pileRep.depiler();
         while (last != 0) {
             int prev = po[last];
@@ -326,15 +349,17 @@ public static void pt(int numGen) {
             last = prev;
         }
         break;
-    // Appel de procédure
-    case 312:
-        adProc = tabSymb[iSymb].info;
+    // Appel d'une procédure
+    case 312: // Lecture des informations nécessaires à l'appel
+        if (tabSymb[iSymb].categorie != PROC) // Petit test au passage
+            UtilLex.messErr("Appel d'autre chose qu'une procédure");
+        adProc = tabSymb[iSymb].info; // ipo de la procédure
         nbPars = tabSymb[iSymb+1].info;
         nbParsLu = 0;
         curPar = iSymb+2;
         break;
-    case 313:
-        if (nbParsLu > nbPars)
+    case 313: // Lecture des paramètres fixes
+        if (nbParsLu >= nbPars)
             UtilLex.messErr("Trop de paramètres");
         if (tabSymb[curPar].categorie != PARAMFIXE)
             UtilLex.messErr("Mauvais paramètre");
@@ -342,14 +367,15 @@ public static void pt(int numGen) {
             UtilLex.messErr("Erreur de typage");
         nbParsLu++; curPar++;
         break;
-    case 314:
-        if (nbParsLu > nbPars)
+    case 314: // Lecture des paramètres modifiables
+        if (nbParsLu >= nbPars)
             UtilLex.messErr("Trop de paramètres");
         if (tabSymb[curPar].categorie != PARAMMOD)
             UtilLex.messErr("Mauvais paramètre");
         if (tabSymb[curPar].type != tabSymb[iSymb].type)
             UtilLex.messErr("Erreur de typage");
         nbParsLu++; curPar++;
+        // Transmission selon la catégorie du paramètre effectif
         cat = tabSymb[iSymb].categorie;
         if (cat == VARGLOBALE) produire(EMPILERADG);
         else produire(EMPILERADL);
@@ -357,9 +383,13 @@ public static void pt(int numGen) {
         if (cat == VARLOCALE) produire(0);
         if (cat == PARAMMOD) produire(1);
         break;
-    case 315:
-        produire(APPEL); produire(adProc); produire(nbPars); break;
+    case 315: // Appel effectif de la procédure
+        if (nbParsLu != nbPars)
+            UtilLex.messErr("Pas assez de paramètres");
+        produire(APPEL); produire(adProc); produire(nbPars);
+        break;
     
+    // Fin de lecture d'un programme
     case 666:
         produire(ARRET);
         constObj();
