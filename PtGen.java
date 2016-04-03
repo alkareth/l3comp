@@ -143,7 +143,7 @@ private static void constObj() {
         System.out.println("impossible de créer "+UtilLex.nomSource+".obj");
         System.exit(1);
     }
-    for (int i=1;i<=ipo;i++) 
+    for (int i=1;i<=ipo;i++)
         if (vTrans[i]!=-1) Ecriture.ecrireStringln(f,i+"   "+vTrans[i]);
     for (int i=1;i<=ipo;i++) Ecriture.ecrireStringln(f,""+po[i]);
     Ecriture.fermer(f);
@@ -156,8 +156,10 @@ private static int[] vTrans=new int[MAXOBJ+1];
 private static void initvTrans () { for (int i=1;i<=MAXOBJ;i++) vTrans[i]=-1; }
 private static Descripteur desc;
 private static void vecteurTrans(int x) { // ajout d'un doublet au vecteur de translation
-    if (x==Descripteur.REFEXT || desc.unite.equals("module")) vTrans[ipo]=x;desc.nbTransExt++;
+    if (x==Descripteur.REFEXT || desc.unite.equals("module")) {vTrans[ipo]=x;desc.nbTransExt++;}
 }  // descripteur
+
+public static boolean estProg() { return desc.unite.equals("programme"); }
 
 // autres variables
 // ----------------
@@ -173,8 +175,7 @@ private static int iAff; // adresse de la table des symboles
 private static int tCour; // type courant pour vérifications
 private static int vCour; // valeur de l'expression compilée le cas echeant
 // Variables pour l'appel de procédures
-private static int nbPars;
-private static int adProc;
+private static int iProc;
 private static int nbParsLu;
 private static int curPar;
 
@@ -188,8 +189,7 @@ private static void initialisations() { // à compléter si nécessaire mais NE 
     cptVar = 0; cptPar = 0; mulFac = 1;
     code = 0; iSymb = 0;
     tCour = NEUTRE; vCour = 0;
-    nbPars = 0; nbParsLu = 0;
-    adProc = 0; curPar = 0; 
+    iProc = 0; nbParsLu = 0; curPar = 0; 
 } // initialisations
 
 // code des points de génération
@@ -214,6 +214,9 @@ public static void pt(int numGen) {
     case 3: tCour = BOOL; break;
     case 4: verifEnt(); break;
     case 6: verifBool(); break;
+    // Programme ou module ?
+    case 10: desc.unite = "programme"; break;
+    case 11: desc.unite = "module"; break;
 
     /*******************************************
      * Expressions arithmétiques et booléennes *
@@ -241,8 +244,9 @@ public static void pt(int numGen) {
                 produire(CONTENUL); break;
         }
         produire(tabSymb[iSymb].info);
+        if (cat == VARGLOBALE) vecteurTrans(Descripteur.TRANSDON);
         if (cat == VARLOCALE || cat == PARAMFIXE) produire(0);
-        else if (cat == PARAMMOD) produire(1);
+        if (cat == PARAMMOD) produire(1);
         break;
     // Production des codes Mapile
     case 106: produire(MUL); break;
@@ -277,7 +281,15 @@ public static void pt(int numGen) {
         cptVar++;
         break;
     case 202:
-        produire(RESERVER); produire(cptVar); cptVar = 0; break;
+        // Si on a lu toutes les variables globales, màj le descripteur
+        if (bc == 1) desc.tailleGlobaux = cptVar;
+        // Si c'est un programme ou une déclaration locale, produire RESERVER
+        if (desc.unite.equals("programme") || bc != 1) {
+            produire(RESERVER);
+            produire(cptVar);
+        }
+        cptVar = 0;
+        break;
     // Procédures
     case 203:
         if (presentIdent(1) != 0)
@@ -301,6 +313,43 @@ public static void pt(int numGen) {
         it = bc + tabSymb[bc-1].info - 1;
         for (int i=bc; i<=it; i++) tabSymb[i].code = -1;
         bc = 1;
+        break;
+    // Références et points d'entrée
+    case 209:
+        desc.nbRef++;
+        if (desc.nbRef > Descripteur.MAXREF)
+            UtilLex.messErr("Trop de références extérieures");
+        if (presentIdent(1) != 0)
+            UtilLex.messErr("Référence déjà déclarée");
+        placeIdent(UtilLex.numId, PROC, NEUTRE, desc.nbRef);
+        placeIdent(-1, REF, NEUTRE, 0);
+        bc = it+1;
+        break;
+    case 210:
+        tabSymb[bc-1].info = cptPar;
+        desc.tabRef[desc.nbRef] = new EltRef(UtilLex.repId(UtilLex.numId), cptPar);
+        for (int i=it; i>=bc; i--) tabSymb[i].code = -1;
+        bc = 1; cptPar = 0;
+        break;
+    case 211:
+        desc.nbDef++;
+        if (desc.nbDef > Descripteur.MAXREF)
+            UtilLex.messErr("Trop de définitions");
+        desc.tabDef[desc.nbDef] = new EltDef(UtilLex.repId(UtilLex.numId), -1, -1);
+        break;
+    case 212:
+        for (int i=1; i<=desc.nbDef; i++) {
+            EltDef def = desc.tabDef[i];
+            for (int j=1; j<=it; j++) {
+                EltTabSymb cur = tabSymb[j];
+                if (cur.categorie == PROC && UtilLex.repId(cur.code).equals(def.nomProc)) {
+                    def.adPo = cur.info;
+                    def.nbParam = tabSymb[j+1].info;
+                    break;
+                }
+            }
+            if (def.adPo == -1) UtilLex.messErr("Procédure renseignée en def mais non définie");
+        }
         break;
 
     /******************************
@@ -327,6 +376,7 @@ public static void pt(int numGen) {
         if (cat == VARGLOBALE) produire(AFFECTERG);
         else produire(AFFECTERL);
         produire(tabSymb[iAff].info);
+        if (cat == VARGLOBALE) vecteurTrans(Descripteur.TRANSDON);
         if (cat == VARLOCALE) produire(0);
         if (cat == PARAMMOD) produire(1);
         break;
@@ -337,10 +387,10 @@ public static void pt(int numGen) {
     case 304: pileRep.empiler(ipo); break;
     case 305: po[pileRep.depiler()] = ipo+1; break;
     case 306: po[pileRep.depiler()] = ipo+3; break;
-    case 307: produire(BSIFAUX); produire(0); break;
-    case 308: produire(BINCOND); produire(0); break;
-    case 309: produire(BINCOND); produire(pileRep.depiler()); break;
-    case 311: produire(BINCOND); produire(pileRep.depiler()+1); break;
+    case 307: produire(BSIFAUX); produire(0); vecteurTrans(Descripteur.TRANSCODE); break;
+    case 308: produire(BINCOND); produire(0); vecteurTrans(Descripteur.TRANSCODE); break;
+    case 309: produire(BINCOND); produire(pileRep.depiler()); vecteurTrans(Descripteur.TRANSCODE); break;
+    case 311: produire(BINCOND); produire(pileRep.depiler()+1); vecteurTrans(Descripteur.TRANSCODE); break;
     case 310: // Résolution des BINCOND 0 pour l'instruction cond
         int last = pileRep.depiler();
         while (last != 0) {
@@ -353,13 +403,12 @@ public static void pt(int numGen) {
     case 312: // Lecture des informations nécessaires à l'appel
         if (tabSymb[iSymb].categorie != PROC) // Petit test au passage
             UtilLex.messErr("Appel d'autre chose qu'une procédure");
-        adProc = tabSymb[iSymb].info; // ipo de la procédure
-        nbPars = tabSymb[iSymb+1].info;
+        iProc = iSymb;
         nbParsLu = 0;
         curPar = iSymb+2;
         break;
     case 313: // Lecture des paramètres fixes
-        if (nbParsLu >= nbPars)
+        if (nbParsLu >= tabSymb[iProc+1].info)
             UtilLex.messErr("Trop de paramètres");
         if (tabSymb[curPar].categorie != PARAMFIXE)
             UtilLex.messErr("Mauvais paramètre");
@@ -368,7 +417,7 @@ public static void pt(int numGen) {
         nbParsLu++; curPar++;
         break;
     case 314: // Lecture des paramètres modifiables
-        if (nbParsLu >= nbPars)
+        if (nbParsLu >= tabSymb[iProc+1].info)
             UtilLex.messErr("Trop de paramètres");
         if (tabSymb[curPar].categorie != PARAMMOD)
             UtilLex.messErr("Mauvais paramètre");
@@ -380,20 +429,26 @@ public static void pt(int numGen) {
         if (cat == VARGLOBALE) produire(EMPILERADG);
         else produire(EMPILERADL);
         produire(tabSymb[iSymb].info);
+        if (cat == VARGLOBALE) vecteurTrans(Descripteur.TRANSDON);
         if (cat == VARLOCALE) produire(0);
         if (cat == PARAMMOD) produire(1);
         break;
     case 315: // Appel effectif de la procédure
-        if (nbParsLu != nbPars)
+        if (nbParsLu != tabSymb[iProc+1].info)
             UtilLex.messErr("Pas assez de paramètres");
-        produire(APPEL); produire(adProc); produire(nbPars);
+        produire(APPEL); produire(tabSymb[iProc].info);
+        if (tabSymb[iProc+1].categorie == REF) vecteurTrans(Descripteur.REFEXT);
+        else vecteurTrans(Descripteur.TRANSCODE);
+        produire(tabSymb[iProc+1].info);
         break;
     
-    // Fin de lecture d'un programme
+    // Fin de lecture d'un programme ou module
     case 666:
-        produire(ARRET);
+        if (desc.unite.equals("programme")) produire(ARRET);
+        desc.tailleCode = ipo;
         constObj();
         constGen();
+        desc.ecrireDesc(UtilLex.nomSource);
         break;
     default:
         System.out.println("Point de génération non prévu dans votre liste");

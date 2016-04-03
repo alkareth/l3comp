@@ -1,0 +1,10 @@
+FICHIER tests/facto.desc :
+
+unité          programme
+tailleCode     59
+tailleGlobaux  2
+nbDef          0
+nbRef          0
+nbTransExt     0
+tabDef          
+tabRef          
